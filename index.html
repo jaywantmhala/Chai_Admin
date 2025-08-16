@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chai Admin | Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            chai: { 50:'#fdf8f3',100:'#f7efe6',200:'#efdfcc',300:'#e4c9a6',400:'#d8ae7a',500:'#c9924f',600:'#b1763a',700:'#8c5a2d',800:'#6f4826',900:'#5b3b20' }
+          },
+          boxShadow: { soft:'0 8px 30px rgba(0,0,0,.06)', 'soft-dark':'0 8px 30px rgba(0,0,0,.35)' },
+          screens: {
+            'xs': '420px'  /* Tiny phones to small phones helper */
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .card { transition: transform .2s ease, box-shadow .2s ease; }
+    .card:hover { transform: translateY(-2px); }
+    .modal-enter { transform: translateY(10px) scale(.98); opacity: 0; }
+    .modal-enter-active { transform: translateY(0) scale(1); opacity: 1; transition: all .2s ease; }
+    .toggle-active { background-color: #059669; color: #fff; border-color: transparent; }
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    .dark ::-webkit-scrollbar-thumb { background: #4b5563; }
+    .dark ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+    /* Responsive table helpers */
+    .table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    thead th.sticky {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-amber-50 via-white to-emerald-50 min-h-screen text-gray-800 dark:bg-[linear-gradient(180deg,#0b1220,#0d1322)] dark:text-gray-100">
+  <!-- Header -->
+  <header class="sticky top-0 z-40 backdrop-blur bg-white/70 dark:bg-[#0d1322]/60 border-b border-emerald-100 dark:border-white/10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3 min-w-0">
+        <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-lime-500 text-white font-bold shadow flex-shrink-0">☕</span>
+        <div class="min-w-0">
+          <h1 class="text-base xs:text-lg sm:text-xl font-semibold tracking-tight truncate">Graduate Chai Wala Admin</h1>
+          <p class="text-[10px] xs:text-xs text-gray-500 dark:text-gray-400 -mt-0.5 truncate">Brewed insights, better business</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Theme icon -->
+        <button id="themeIcon" class="p-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/70 dark:bg-white/5 hover:bg-gray-50 dark:hover:bg-white/10 transition"
+                title="Toggle theme" aria-label="Toggle theme">
+          <svg id="iconSun" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-amber-500 hidden" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M6.76 4.84l-1.8-1.79-1.42 1.41 1.79 1.8 1.43-1.42zm10.48 0l1.79-1.8 1.42 1.41-1.8 1.79-1.41-1.4zM12 2h-1v3h1V2zm0 17h-1v3h1v-3zM4 13H1v-1h3v1zm19 0h-3v-1h3v1zM6.76 19.16l-1.43 1.42-1.79-1.8 1.42-1.41 1.8 1.79zm12.91-.38l1.8 1.79-1.42 1.41-1.79-1.8 1.41-1.4zM12 6a6 6 0 100 12 6 6 0 000-12z"/>
+          </svg>
+          <svg id="iconMoon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-emerald-400 hidden" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.74 2.07a1 1 0 00-1.38 1.17A8 8 0 1020.76 12a1 1 0 00-1.17-1.38A6 6 0 0112.74 2.07z"/>
+          </svg>
+        </button>
+
+        <!-- Sidebar toggle visible on small screens -->
+        <button id="sidebarToggle" class="px-3 py-2 text-xs xs:text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 lg:hidden">
+          Menu
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex gap-6">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="hidden lg:block w-64 shrink-0 rounded-2xl border border-emerald-100 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur shadow-soft dark:shadow-soft-dark h-[calc(100vh-7rem)] sticky top-[5.5rem] overflow-auto">
+      <nav class="p-4 space-y-1">
+        <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 px-3">Overview</div>
+        <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-white/10 text-emerald-700 dark:text-emerald-300 font-medium">Dashboard</button>
+        <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-white/10 dark:text-gray-200">Analytics</button>
+        <div class="text-xs font-semibold text-gray-500 dark:text-gray-400 px-3 mt-3">Management</div>
+        <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-white/10 dark:text-gray-200" onclick="scrollToId('productsSection')">Products</button>
+        <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-white/10 dark:text-gray-200" onclick="scrollToId('ordersSection')">Orders</button>
+        <button class="w-full text-left px-3 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-white/10 dark:text-gray-200" onclick="scrollToId('revenueSection')">Revenue</button>
+      </nav>
+      <div class="mt-auto p-4 border-t border-emerald-100 dark:border-white/10 text-sm text-gray-500 dark:text-gray-400">
+        <div class="font-medium text-gray-700 dark:text-gray-200">Admin</div>
+        chai@studio.dev
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 space-y-8">
+      <!-- KPI Cards: responsive auto-fit -->
+      <section id="revenueSection" class="grid grid-cols-1 xs:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
+        <div class="card p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-100 to-lime-50 border border-emerald-100 dark:from-emerald-900/30 dark:to-lime-900/10 dark:border-white/10 shadow-soft dark:shadow-soft-dark">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Daily Revenue</p>
+              <p id="dailyRevenue" class="mt-1 text-2xl sm:text-3xl font-semibold text-emerald-700 dark:text-emerald-300">₹0</p>
+            </div>
+            <span class="inline-flex w-9 h-9 sm:w-11 sm:h-11 items-center justify-center rounded-xl bg-white dark:bg-white/10 shadow text-emerald-600 dark:text-emerald-300">₹</span>
+          </div>
+        </div>
+
+        <div class="card p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-100/70 to-teal-50 border border-emerald-100 dark:from-emerald-900/20 dark:to-teal-900/10 dark:border-white/10 shadow-soft dark:shadow-soft-dark">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Weekly Revenue</p>
+              <p id="weeklyRevenue" class="mt-1 text-2xl sm:text-3xl font-semibold text-emerald-700 dark:text-emerald-300">₹0</p>
+            </div>
+            <span class="inline-flex w-9 h-9 sm:w-11 sm:h-11 items-center justify-center rounded-xl bg-white dark:bg-white/10 shadow text-teal-600 dark:text-teal-300">📈</span>
+          </div>
+        </div>
+
+        <div class="card p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-emerald-100/60 to-cyan-50 border border-emerald-100 dark:from-emerald-900/20 dark:to-cyan-900/10 dark:border-white/10 shadow-soft dark:shadow-soft-dark">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Monthly Revenue</p>
+              <p id="monthlyRevenue" class="mt-1 text-2xl sm:text-3xl font-semibold text-emerald-700 dark:text-emerald-300">₹0</p>
+            </div>
+            <span class="inline-flex w-9 h-9 sm:w-11 sm:h-11 items-center justify-center rounded-xl bg-white dark:bg-white/10 shadow text-cyan-600 dark:text-cyan-300">🗓️</span>
+          </div>
+        </div>
+
+        <div class="card p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-lime-100 to-emerald-50 border border-emerald-100 dark:from-lime-900/20 dark:to-emerald-900/10 dark:border-white/10 shadow-soft dark:shadow-soft-dark">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">Yearly Revenue</p>
+              <p id="yearlyRevenue" class="mt-1 text-2xl sm:text-3xl font-semibold text-emerald-700 dark:text-emerald-300">₹0</p>
+            </div>
+            <span class="inline-flex w-9 h-9 sm:w-11 sm:h-11 items-center justify-center rounded-xl bg-white dark:bg-white/10 shadow text-lime-600 dark:text-lime-300">🏆</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Revenue Trend: responsive chart card -->
+      <section class="rounded-2xl border border-emerald-100 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur p-4 sm:p-5 shadow-soft dark:shadow-soft-dark">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 class="text-base sm:text-lg font-semibold">Revenue Trend</h2>
+          <div class="flex flex-wrap gap-2">
+            <button id="toggleRevenue" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10 toggle-active">Revenue</button>
+            <button id="toggleOrders" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10">Orders</button>
+            <button id="periodWeekly" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10">Weekly</button>
+            <button id="periodMonthly" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10">Monthly</button>
+            <button id="periodYearly" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10 toggle-active">Yearly</button>
+          </div>
+        </div>
+        <div class="rounded-xl border border-emerald-100 dark:border-white/10 bg-gradient-to-br from-emerald-50 to-white dark:from-white/5 dark:to-white/0 p-2 sm:p-3">
+          <div class="h-56 xs:h-64 sm:h-72 md:h-80">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Products -->
+      <section id="productsSection" class="space-y-4">
+        <div class="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3">
+          <h2 class="text-lg sm:text-xl font-semibold">Products</h2>
+          <button id="addProductBtn" class="w-full xs:w-auto px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 shadow-soft dark:shadow-soft-dark">
+            + Add Product
+          </button>
+        </div>
+        <div class="table-wrapper rounded-2xl border border-emerald-100 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur shadow-soft dark:shadow-soft-dark">
+          <table class="min-w-[720px] w-full">
+            <thead class="bg-emerald-600 text-white text-xs sm:text-sm">
+              <tr class="text-left">
+                <th class="py-3 px-4 sticky">Name</th>
+                <th class="py-3 px-4 sticky">Price</th>
+                <th class="py-3 px-4 sticky">Category</th>
+                <th class="py-3 px-4 sticky">Stock</th>
+                <th class="py-3 px-4 sticky">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="productsTable" class="divide-y divide-emerald-100 dark:divide-white/10 text-sm"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Orders -->
+      <section id="ordersSection" class="space-y-4">
+        <div class="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3">
+          <h2 class="text-lg sm:text-xl font-semibold">Orders</h2>
+          <div class="grid grid-cols-2 xs:flex gap-2">
+            <button onclick="filterOrders('today')" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Today</button>
+            <button onclick="filterOrders('weekly')" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10">Weekly</button>
+            <button onclick="filterOrders('monthly')" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10">Monthly</button>
+            <button onclick="filterOrders('yearly')" class="px-3 py-1.5 text-xs xs:text-sm rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10">Yearly</button>
+          </div>
+        </div>
+        <div class="table-wrapper rounded-2xl border border-emerald-100 dark:border-white/10 bg-white/80 dark:bg-white/5 backdrop-blur shadow-soft dark:shadow-soft-dark">
+          <table class="min-w-[720px] w-full">
+            <thead class="bg-emerald-600 text-white text-xs sm:text-sm">
+              <tr class="text-left">
+                <th class="py-3 px-4 sticky">Order ID</th>
+                <th class="py-3 px-4 sticky">Customer</th>
+                <th class="py-3 px-4 sticky">Amount</th>
+                <th class="py-3 px-4 sticky">Date</th>
+                <th class="py-3 px-4 sticky">Status</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTable" class="divide-y divide-emerald-100 dark:divide-white/10 text-sm"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div id="productModal" class="fixed inset-0 hidden items-center justify-center z-50">
+    <div class="absolute inset-0 bg-black/40"></div>
+    <div id="modalCard" class="relative w-full max-w-lg mx-4 sm:mx-6 rounded-2xl border border-emerald-100 dark:border-white/10 bg-white dark:bg-[#0f172a] p-5 sm:p-6 shadow-xl modal-enter">
+      <div class="flex items-center justify-between mb-3">
+        <h3 id="modalTitle" class="text-base sm:text-lg font-semibold">Add Product</h3>
+        <button id="closeModal" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10">✕</button>
+      </div>
+      <form id="productForm" class="space-y-4">
+        <input type="hidden" id="productId" />
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1" for="productName">Name</label>
+            <input id="productName" type="text" class="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="productPrice">Price (₹)</label>
+            <input id="productPrice" type="number" min="0" class="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium mb-1" for="productCategory">Category</label>
+            <input id="productCategory" type="text" class="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1" for="productStock">In Stock</label>
+            <select id="productStock" class="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              <option value="true">Available</option>
+              <option value="false">Out of Stock</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1" for="productDesc">Description</label>
+          <textarea id="productDesc" rows="3" class="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-white/5 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+        </div>
+        <div class="flex flex-col sm:flex-row sm:justify-end gap-2 pt-2">
+          <button type="button" id="cancelBtn" class="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10">Cancel</button>
+          <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Theme
+    const themeIcon = document.getElementById('themeIcon');
+    const iconSun = document.getElementById('iconSun');
+    const iconMoon = document.getElementById('iconMoon');
+
+    function applyInitialTheme() {
+      const saved = localStorage.getItem('theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const dark = saved ? saved === 'dark' : prefersDark;
+      document.documentElement.classList.toggle('dark', dark);
+      iconSun.classList.toggle('hidden', !dark);
+      iconMoon.classList.toggle('hidden', dark);
+    }
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.toggle('dark');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      iconSun.classList.toggle('hidden', !isDark);
+      iconMoon.classList.toggle('hidden', isDark);
+      renderTrendChart();
+    }
+    themeIcon.addEventListener('click', toggleTheme);
+    applyInitialTheme();
+
+    // Sidebar for small screens
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    sidebarToggle?.addEventListener('click', () => {
+      sidebar.classList.toggle('hidden');
+    });
+    function scrollToId(id) {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    window.scrollToId = scrollToId;
+
+    // Sample Data
+    let products = [
+      { id: 1, name: 'Masala Chai', price: 30, category: 'Tea', inStock: true, description: 'Traditional spiced tea' },
+      { id: 2, name: 'Ginger Chai', price: 35, category: 'Tea', inStock: true, description: 'Zesty ginger flavor' },
+      { id: 3, name: 'Green Tea', price: 25, category: 'Tea', inStock: false, description: 'Light & fresh' },
+      { id: 4, name: 'Cardamom Chai', price: 40, category: 'Tea', inStock: true, description: 'Aromatic cardamom' },
+    ];
+    let orders = [
+      { id: 101, customer: 'Alice Kumar', amount: 60, date: new Date(), status: 'completed' },
+      { id: 102, customer: 'Bob Singh', amount: 90, date: new Date(new Date().setDate(new Date().getDate() - 3)), status: 'processing' },
+      { id: 103, customer: 'Charlie Patel', amount: 120, date: new Date(new Date().setDate(new Date().getDate() - 10)), status: 'pending' },
+      { id: 104, customer: 'Diana Shah', amount: 75, date: new Date(new Date().setDate(new Date().getDate() - 30)), status: 'completed' },
+    ];
+
+    // KPIs
+    function calculateRevenue() {
+      const today = new Date();
+      let daily = 0, weekly = 0, monthly = 0, yearly = 0;
+      orders.forEach(order => {
+        const diffDays = Math.floor((today - order.date) / (1000 * 60 * 60 * 24));
+        if (diffDays === 0) daily += order.amount;
+        if (diffDays <= 7) weekly += order.amount;
+        if (order.date.getMonth() === today.getMonth() && order.date.getFullYear() === today.getFullYear()) monthly += order.amount;
+        if (order.date.getFullYear() === today.getFullYear()) yearly += order.amount;
+      });
+      document.getElementById('dailyRevenue').textContent = '₹' + daily;
+      document.getElementById('weeklyRevenue').textContent = '₹' + weekly;
+      document.getElementById('monthlyRevenue').textContent = '₹' + monthly;
+      document.getElementById('yearlyRevenue').textContent = '₹' + yearly;
+    }
+
+    // Products
+    function renderProducts() {
+      const tbody = document.getElementById('productsTable');
+      tbody.innerHTML = '';
+      products.forEach(product => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50/70 dark:hover:bg-white/5';
+        tr.innerHTML = `
+          <td class="py-3 px-4">
+            <div class="font-medium">${product.name}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">${product.description || ''}</div>
+          </td>
+          <td class="py-3 px-4">₹${product.price}</td>
+          <td class="py-3 px-4">
+            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">${product.category}</span>
+          </td>
+          <td class="py-3 px-4">
+            ${product.inStock
+              ? '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">● In stock</span>'
+              : '<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300">● Out</span>'
+            }
+          </td>
+          <td class="py-3 px-4">
+            <div class="flex items-center gap-2">
+              <button onclick="editProduct(${product.id})" class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/10 text-sm">Edit</button>
+              <button onclick="deleteProduct(${product.id})" class="px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 text-sm">Delete</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Orders
+    function renderOrders(filteredOrders) {
+      const tbody = document.getElementById('ordersTable');
+      tbody.innerHTML = '';
+      if (filteredOrders.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-gray-500 dark:text-gray-400">No orders found</td></tr>`;
+        return;
+      }
+      filteredOrders.forEach(order => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50/70 dark:hover:bg-white/5';
+        const statusBadge = {
+          pending:  '<span class="px-2 py-1 text-xs rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300">Pending</span>',
+          processing: '<span class="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300">Processing</span>',
+          completed: '<span class="px-2 py-1 text-xs rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300">Completed</span>',
+          cancelled: '<span class="px-2 py-1 text-xs rounded-full bg-rose-100 dark:bg-rose-900/40 text-rose-800 dark:text-rose-300">Cancelled</span>',
+        }[order.status] || '<span class="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-white/10 text-gray-800 dark:text-gray-300">Unknown</span>';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-medium">#${order.id}</td>
+          <td class="py-3 px-4">${order.customer}</td>
+          <td class="py-3 px-4">₹${order.amount}</td>
+          <td class="py-3 px-4">${order.date.toLocaleDateString('en-IN')}</td>
+          <td class="py-3 px-4">${statusBadge}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+    function filterOrders(type) {
+      const today = new Date();
+      let filtered = [];
+      if (type === 'today') {
+        filtered = orders.filter(order => order.date.toDateString() === today.toDateString());
+      } else if (type === 'weekly') {
+        filtered = orders.filter(order => {
+          const diffDays = Math.floor((today - order.date) / (1000 * 60 * 60 * 24));
+          return diffDays <= 7;
+        });
+      } else if (type === 'monthly') {
+        filtered = orders.filter(order => order.date.getMonth() === today.getMonth() && order.date.getFullYear() === today.getFullYear());
+      } else if (type === 'yearly') {
+        filtered = orders.filter(order => order.date.getFullYear() === today.getFullYear());
+      } else {
+        filtered = orders;
+      }
+      renderOrders(filtered);
+    }
+    window.filterOrders = filterOrders;
+
+    // Chart.js
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    let currentDataset = 'revenue';
+    let currentPeriod = 'yearly';
+    let trendChart;
+
+    function getWeekLabels() {
+      const today = new Date();
+      const labels = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        labels.push(d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }));
+      }
+      return labels;
+    }
+    function getMonthDayLabels() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const labels = [];
+      for (let d = 1; d <= daysInMonth; d++) labels.push(String(d).padStart(2, '0'));
+      return labels;
+    }
+    function getYearMonthLabels() { return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; }
+
+    function aggregateData(period, dataset) {
+      const now = new Date();
+      if (period === 'weekly') {
+        const buckets = Array(7).fill(0);
+        const labels = getWeekLabels();
+        orders.forEach(o => {
+          const diffDays = Math.floor((now - o.date) / (1000 * 60 * 60 * 24));
+          if (diffDays >= 0 && diffDays <= 6) {
+            const idx = 6 - diffDays;
+            buckets[idx] += (dataset === 'revenue') ? o.amount : 1;
+          }
+        });
+        return { labels, data: buckets };
+      }
+      if (period === 'monthly') {
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const buckets = Array(daysInMonth).fill(0);
+        const labels = getMonthDayLabels();
+        orders.forEach(o => {
+          if (o.date.getFullYear() === year && o.date.getMonth() === month) {
+            const day = o.date.getDate();
+            buckets[day - 1] += (dataset === 'revenue') ? o.amount : 1;
+          }
+        });
+        return { labels, data: buckets };
+      }
+      const buckets = Array(12).fill(0);
+      const labels = getYearMonthLabels();
+      const year = now.getFullYear();
+      orders.forEach(o => {
+        if (o.date.getFullYear() === year) {
+          const m = o.date.getMonth();
+          buckets[m] += (dataset === 'revenue') ? o.amount : 1;
+        }
+      });
+      return { labels, data: buckets };
+    }
+    function chartColors() {
+      const isDark = document.documentElement.classList.contains('dark');
+      return {
+        border: currentDataset === 'revenue'
+          ? (isDark ? 'rgba(16,185,129,1)' : 'rgba(5,150,105,1)')
+          : (isDark ? 'rgba(96,165,250,1)' : 'rgba(37,99,235,1)'),
+        fill: currentDataset === 'revenue'
+          ? (isDark ? 'rgba(16,185,129,0.15)' : 'rgba(16,185,129,0.12)')
+          : (isDark ? 'rgba(59,130,246,0.15)' : 'rgba(59,130,246,0.12)'),
+        grid: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+        tick: isDark ? '#d1d5db' : '#4b5563'
+      };
+    }
+    function renderTrendChart() {
+      const { labels, data } = aggregateData(currentPeriod, currentDataset);
+      const c = chartColors();
+      const cfg = {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: currentDataset === 'revenue' ? 'Revenue (₹)' : 'Orders (count)',
+            data,
+            fill: true,
+            borderColor: c.border,
+            backgroundColor: c.fill,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.35
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, labels: { boxWidth: 12, color: c.tick } },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              callbacks: {
+                label: (ctx) => {
+                  const val = ctx.parsed.y || 0;
+                  return currentDataset === 'revenue' ? `Revenue: ₹${val}` : `Orders: ${val}`;
+                }
+              }
+            }
+          },
+          interaction: { mode: 'nearest', axis: 'x', intersect: false },
+          scales: {
+            x: { grid: { color: 'transparent' }, ticks: { color: c.tick } },
+            y: {
+              beginAtZero: true,
+              grid: { color: c.grid },
+              ticks: { color: c.tick, callback: (v) => currentDataset === 'revenue' ? `₹${v}` : v }
+            }
+          },
+          animation: { duration: 300 }
+        }
+      };
+      if (trendChart) trendChart.destroy();
+      trendChart = new Chart(ctx, cfg);
+    }
+
+    // Toggle buttons
+    function setActive(el, active) { el?.classList.toggle('toggle-active', active); }
+    const toggleRevenueBtn = document.getElementById('toggleRevenue');
+    const toggleOrdersBtn = document.getElementById('toggleOrders');
+    const periodWeeklyBtn = document.getElementById('periodWeekly');
+    const periodMonthlyBtn = document.getElementById('periodMonthly');
+    const periodYearlyBtn = document.getElementById('periodYearly');
+
+    toggleRevenueBtn.addEventListener('click', () => {
+      currentDataset = 'revenue'; setActive(toggleRevenueBtn, true); setActive(toggleOrdersBtn, false); renderTrendChart();
+    });
+    toggleOrdersBtn.addEventListener('click', () => {
+      currentDataset = 'orders'; setActive(toggleRevenueBtn, false); setActive(toggleOrdersBtn, true); renderTrendChart();
+    });
+    periodWeeklyBtn.addEventListener('click', () => {
+      currentPeriod = 'weekly'; setActive(periodWeeklyBtn, true); setActive(periodMonthlyBtn, false); setActive(periodYearlyBtn, false); renderTrendChart();
+    });
+    periodMonthlyBtn.addEventListener('click', () => {
+      currentPeriod = 'monthly'; setActive(periodWeeklyBtn, false); setActive(periodMonthlyBtn, true); setActive(periodYearlyBtn, false); renderTrendChart();
+    });
+    periodYearlyBtn.addEventListener('click', () => {
+      currentPeriod = 'yearly'; setActive(periodWeeklyBtn, false); setActive(periodMonthlyBtn, false); setActive(periodYearlyBtn, true); renderTrendChart();
+    });
+
+    // Modal
+    const productModal = document.getElementById('productModal');
+    const modalCard = document.getElementById('modalCard');
+    const addProductBtn = document.getElementById('addProductBtn');
+    const closeModal = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const productForm = document.getElementById('productForm');
+
+    function openModal(title) {
+      document.getElementById('modalTitle').textContent = title;
+      productModal.classList.remove('hidden');
+      modalCard.classList.remove('modal-enter');
+      requestAnimationFrame(() => modalCard.classList.add('modal-enter-active'));
+    }
+    function hideModal() {
+      productModal.classList.add('hidden');
+      modalCard.classList.remove('modal-enter-active');
+      modalCard.classList.add('modal-enter');
+    }
+
+    addProductBtn.addEventListener('click', () => {
+      productForm.reset();
+      document.getElementById('productId').value = '';
+      document.getElementById('productStock').value = 'true';
+      openModal('Add Product');
+    });
+    closeModal.addEventListener('click', hideModal);
+    cancelBtn.addEventListener('click', hideModal);
+    productModal.addEventListener('click', (e) => { if (e.target === productModal) hideModal(); });
+
+    productForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('productId').value;
+      const name = document.getElementById('productName').value.trim();
+      const price = parseFloat(document.getElementById('productPrice').value);
+      const category = document.getElementById('productCategory').value.trim();
+      const inStock = document.getElementById('productStock').value === 'true';
+      const description = document.getElementById('productDesc').value.trim();
+      if (id) {
+        const index = products.findIndex(p => p.id == id);
+        if (index !== -1) products[index] = { ...products[index], name, price, category, inStock, description };
+      } else {
+        const newId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
+        products.push({ id: newId, name, price, category, inStock, description });
+      }
+      hideModal();
+      renderProducts();
+      calculateRevenue();
+      renderTrendChart();
+    });
+
+    function editProduct(id) {
+      const product = products.find(p => p.id === id);
+      if (product) {
+        document.getElementById('productId').value = product.id;
+        document.getElementById('productName').value = product.name;
+        document.getElementById('productPrice').value = product.price;
+        document.getElementById('productCategory').value = product.category;
+        document.getElementById('productStock').value = product.inStock ? 'true' : 'false';
+        document.getElementById('productDesc').value = product.description || '';
+        openModal('Edit Product');
+      }
+    }
+    function deleteProduct(id) {
+      if (confirm('Are you sure you want to delete this product?')) {
+        products = products.filter(p => p.id !== id);
+        renderProducts();
+        renderTrendChart();
+      }
+    }
+    window.editProduct = editProduct;
+    window.deleteProduct = deleteProduct;
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      calculateRevenue();
+      renderProducts();
+      filterOrders('today');
+      renderTrendChart();
+    });
+  </script>
+</body>
+</html>
